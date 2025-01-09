@@ -66,8 +66,16 @@ class Pay {
     List<PaymentItem> paymentItems,
   ) async {
     await throwIfProviderIsNotDefined(provider);
-    return _payPlatform.showPaymentSelector(
-        _configurations[provider]!, paymentItems);
+    final configuration = _configurations[provider]!;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return _payPlatform.showPaymentSelector(configuration, paymentItems);
+    }
+    final asyncResult = EventChannel('plugins.flutter.io/pay/payment_result')
+        .receiveBroadcastStream()
+        .map((result) => jsonDecode(result as String) as Map<String, dynamic>)
+        .first;
+    await _payPlatform.showPaymentSelector(configuration, paymentItems);
+    return asyncResult;
   }
 
   /// Verifies that the selected provider has been previously configured or
